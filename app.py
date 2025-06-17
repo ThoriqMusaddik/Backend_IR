@@ -6,17 +6,26 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-# Mengizinkan semua origin (atau ganti dengan domain Vercel untuk lebih aman)
-CORS(app, resources={r"/*": {"origins": "*"}})
+
+# CORS: Izinkan domain tertentu (lebih aman), atau gunakan "*" saat testing
+CORS(app, resources={r"/*": {"origins": "https://frontend-ir-ecru.vercel.app"}})
+
+# Tambahan opsional untuk berjaga-jaga jika browser tetap menolak permintaan
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')  # atau ganti dengan domain Vercel
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 def scrape_kompas(keyword, start_date, end_date):
     url = f"https://www.kompas.tv/search/{keyword}"
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-     
+
     data = []
     articles = soup.select('.search__item')
-    
+
     for article in articles:
         try:
             title = article.select_one('.search__title').get_text(strip=True)
