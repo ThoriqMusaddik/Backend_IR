@@ -3,10 +3,11 @@ from flask_cors import CORS
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-import os  # ← Tambahkan ini untuk baca PORT dari environment
+import os
 
 app = Flask(__name__)
-CORS(app)
+# Mengizinkan semua origin (atau ganti dengan domain Vercel untuk lebih aman)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 def scrape_kompas(keyword, start_date, end_date):
     url = f"https://www.kompas.tv/search/{keyword}"
@@ -41,13 +42,18 @@ def scrape():
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
 
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+    if not keyword or not start_date_str or not end_date_str:
+        return jsonify({'error': 'Missing parameters'}), 400
+
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
 
     data = scrape_kompas(keyword, start_date, end_date)
     return jsonify(data)
 
-# ✅ Inilah bagian yang kamu minta untuk ditambahkan:
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Railway akan memberi PORT secara otomatis
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
